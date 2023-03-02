@@ -10,5 +10,5 @@ successfully with:
 * ```channels 3.0.5```
 * ```channels-redis 3.4.1```
 
-It does not work well with ```channels-redis 4.0.0``` for unknown reasons. This programmed was heavily inspired by the
+It does not work well with ```channels-redis 4.0.0``` for unknown reasons. This programm was inspired by the
 [Channels Tutorial](https://channels.readthedocs.io/en/latest/tutorial).
