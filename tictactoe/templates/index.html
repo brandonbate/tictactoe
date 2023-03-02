@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8"/>
+	<title>Tic-Tac-Toe</title>
+</head>
+<body>
+	<h1>Welcome to Tic-Tac-Toe Mania</h1>	
+	<p id="player-info">Waiting for an opponent to join server...</p><br>
+	
+	<canvas id="game-board" width="300" height="300" style="border:1px solid #000000;"></canvas>
+	{{ game_id|json_script:"game-id" }}
+	<script>
+		let canvas = document.getElementById("game-board");
+		let ctx = canvas.getContext("2d");
+
+		ctx.lineWidth = 3;
+		ctx.strokeStyle = "black";
+
+		// Draws lines of tic-tac-toe board.
+		ctx.beginPath();
+		ctx.moveTo(100, 0);
+		ctx.lineTo(100, 300);
+		ctx.stroke();
+		
+		ctx.beginPath();
+		ctx.moveTo(200, 0);
+		ctx.lineTo(200, 300);
+		ctx.stroke();
+		
+		ctx.beginPath();
+		ctx.moveTo(0, 100);
+		ctx.lineTo(300, 100);
+		ctx.stroke();
+		
+		ctx.beginPath();
+		ctx.moveTo(0, 200);
+		ctx.lineTo(300, 200);
+		ctx.stroke();
+				
+		ctx.font = "100px Arial";
+		
+		function drawX(ctx,x,y) {
+			let X_x_offset = 15;
+			let X_y_offset = -15;
+			ctx.fillText("X", x*100 + X_x_offset, (y+1)*100 + X_y_offset);
+		}
+
+		function drawO(ctx,x,y) {
+			let O_x_offset = 10;
+			let O_y_offset = -13;
+			ctx.fillText("O", x*100 + O_x_offset, (y+1)*100 + O_y_offset);
+		}
+		
+		function drawLine(ctx,idx) {
+			ctx.beginPath();
+			ctx.lineWidth = 15;
+			ctx.strokeStyle = "red";
+			
+		
+			switch(idx) {
+				case 0:
+					ctx.moveTo(50, 0);
+					ctx.lineTo(50, 300);
+					break;
+				case 1:
+					ctx.moveTo(150, 0);
+					ctx.lineTo(150, 300);
+					break;
+				case 2:
+					ctx.moveTo(250, 0);
+					ctx.lineTo(250, 300);
+					break;
+				case 3:
+					ctx.moveTo(0, 50);
+					ctx.lineTo(300, 50);
+					break;
+				case 4:
+					ctx.moveTo(0, 150);
+					ctx.lineTo(300, 150);
+					break;
+				case 5:
+					ctx.moveTo(0, 250);
+					ctx.lineTo(300, 250);
+					break;
+				case 6:
+					ctx.moveTo(0, 0);
+					ctx.lineTo(300, 300);
+					break;
+				case 7:
+					ctx.moveTo(300, 0);
+					ctx.lineTo(0, 300);
+					break;
+			}
+			ctx.stroke();
+			
+		}
+		
+		const gameSocket = new WebSocket('ws://' + window.location.host + '/ws/play/');
+		let gameID;
+		let yourPiece;
+
+        gameSocket.onmessage = function(e) {
+		
+            const data = JSON.parse(e.data);
+			console.log(data);
+			
+			if(data.type == "start_game") {
+				gameID = data.game_id
+				yourPiece = data.your_piece
+				
+				if(yourPiece == "X") {
+					document.getElementById('player-info').innerText =
+					"You are playing X. You get go first!";
+				} else {
+					document.getElementById('player-info').innerText =
+					"You are playing O. You get go second.";				
+				}
+				
+			} else if(data.type == "game_move") {
+			
+				// Draws pieces
+				if(data.played_piece == 'X') {
+					drawX(ctx, data.x, data.y);
+				} else if(data.played_piece == 'O') {
+					drawO(ctx, data.x, data.y);
+				}
+			
+				// Checks if winner.
+				if(data.hasOwnProperty('winner')) {
+					if(data.winner == "T") {
+						document.getElementById('player-info').innerText = "It's a tie!";
+					} else {
+						document.getElementById('player-info').innerText = data.winner + " won!";
+						drawLine(ctx,data.winning_move);
+					}
+				} else {
+				
+					if(yourPiece == data.played_piece) {
+						document.getElementById('player-info').innerText =
+						"Waiting for other player to move.";
+					} else {
+						document.getElementById('player-info').innerText =
+						"It's your turn.";
+					}
+				}
+			}
+        };
+
+        gameSocket.onclose = function(e) {
+            console.error('Game socket closed unexpectedly');
+        };
+
+		canvas.addEventListener('click', function(e) {
+			const rect = canvas.getBoundingClientRect();
+			const x = Math.floor((event.clientX - rect.left)/100);
+			const y = Math.floor((event.clientY - rect.top)/100);
+
+            gameSocket.send(JSON.stringify({"x":x, "y":y}));
+		});
+		
+		window.onbeforeunload = function() {
+			gameSocket.onclose = function () {}; // disable onclose handler first
+			gameSocket.close();
+		};
+	</script>
+</body>
