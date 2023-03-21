@@ -16,12 +16,12 @@ def find_available_player():
     if(available_player):
         available_player_channel_name = available_player.channel_name
         # We remove this player from the database.
-        AvailablePlayer.objects.filter(channel_name = available_player_channel_name).delete()
+        available_player.delete()
+        # AvailablePlayer.objects.filter(channel_name = available_player_channel_name).delete()
 
         return available_player_channel_name
     
     return None
-    
     
 # Given a set of moves, this function identifies a winner and how they won via an
 # index to the winning_positions array.
@@ -55,8 +55,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         player.save()
 
     async def connect(self):
-        print("opening: " + self.channel_name)
-    
+ 
         # We check if there any available players.
         available_player = await sync_to_async(find_available_player)()
         
@@ -84,22 +83,17 @@ class GameConsumer(AsyncWebsocketConsumer):
             # Accepts all WebSocket traffic from user.
             await self.accept()
     
-            print("Sending message at " + str(hash(available_player)))
             # Send message to current_player through WebSocket.
             new_game_data_for_current_player = {"type": "start_game", 
                                                 "game_id": self.game_id,
                                                 "your_piece": current_player_piece}
             await self.send(text_data=json.dumps(new_game_data_for_current_player))
-            print("Message sent.")
         else:
-            print("No players found. Waiting for opponent.")
             # Accepts all WebSocket traffic from user.
             await self.accept()
 
             # Adds players channel_name to the database.
             await sync_to_async(self.add_channel_name_to_db)()
-            print("Listening for new players at " + str(hash(self.channel_name)))
-
     
     # This function should only be called on the consumer for the player who first arrives
     # at the server. The second player does this setup in the connect function.
@@ -114,6 +108,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         
         
     async def disconnect(self, close_code):
+        # TODO: Delete self from database.
         await self.channel_layer.group_discard(self.game_id_name, self.channel_name)
         
     

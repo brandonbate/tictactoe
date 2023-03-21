@@ -9,7 +9,6 @@
 	<p id="player-info">Waiting for an opponent to join server...</p><br>
 	
 	<canvas id="game-board" width="300" height="300" style="border:1px solid #000000;"></canvas>
-	{{ game_id|json_script:"game-id" }}
 	<script>
 		let canvas = document.getElementById("game-board");
 		let ctx = canvas.getContext("2d");
@@ -103,7 +102,6 @@
         gameSocket.onmessage = function(e) {
 		
             const data = JSON.parse(e.data);
-			console.log(data);
 			
 			if(data.type == "start_game") {
 				gameID = data.game_id
