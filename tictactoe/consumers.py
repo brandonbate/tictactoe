@@ -117,6 +117,9 @@ class GameConsumer(AsyncWebsocketConsumer):
         # game_data will be a dictionary with and x and y coordinate for where player
         # clicked in the grid.
         move_data = json.loads(text_data)
+
+        if(not hasattr(self,'game_id_name')):
+            return
         
         # We pass the game_data, along with additional info, to the channel layer.
         # Consumers for both players will read this message.
